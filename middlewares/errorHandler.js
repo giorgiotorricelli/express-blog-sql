@@ -41,6 +41,12 @@ async function slugValidation(request, response, next) {
 
   const deletingId = rawPosts.findIndex((post) => {return post.id === Number(slug)});
   request.deletingId = deletingId; //questo mi serve solo nel caso della delete
+
+  if (deletingId === -1 || patchingId === -1){
+    response.status(404).json({
+      message: 'post non trovato'
+    })
+  }
   
 
   next();

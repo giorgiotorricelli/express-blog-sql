@@ -272,7 +272,7 @@ async function destroy(request, response) {
     console.log(deletingId);
 
     try {
-        connection.execute(`DELETE FROM posts WHERE posts.id = ${deletingId} `);
+        connection.execute(`DELETE FROM posts WHERE posts.id = ${deletingId + 1} `);
         response.status(204).json({
             message: `post con slug: ${request.params.slug} eliminato`
         });
