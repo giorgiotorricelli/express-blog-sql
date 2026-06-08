@@ -1,15 +1,6 @@
 import express from 'express';
 import router from './routers/postsRouter.js';
 import notFound from './middlewares/notFound.js';
-import connection from './db.js';
-
-try {
-    const [results] = await connection.execute('SELECT * FROM `posts`');
-    console.log(results);
-    
-} catch (error) {
-    throw error;
-}
 
 const app = express();
 

@@ -1,8 +1,8 @@
 import { response } from "express";
-import rawPosts from "../data/posts.js";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, createAgent, tool } from "langchain";
 import { z } from 'zod';
+import connection from "../db.js";
 
 //modifiedByClaude(request, searchedPost)
 
@@ -68,7 +68,17 @@ function multipleTagsSearch(stricts, flexibles, posts, response) {
     }
 }
 
-function index(request, response) {
+async function index(request, response) {
+    let rawPosts = [];
+    try {
+        const [results] = await connection.execute('SELECT * FROM `posts`');
+        rawPosts = results;
+        console.log(results);
+
+    } catch (error) {
+        throw error;
+    }
+
     const posts = rawPosts.map(post => {
         const { id, created_at, published, ...rest } = post;
         return rest;
@@ -122,32 +132,6 @@ function index(request, response) {
         return;
 
     }
-
-    /* if (request.query.published !== undefined) {
-        if (request.query.published === 'true') {
-            const pubFiltered = posts.filter(post => {
-                return post.published === true;
-            });
-            response.status(200).json({
-                message: "Ecco la lista dei post pubblicati",
-                posts: pubFiltered
-            });
-        } else if (request.query.published === 'false') {
-            const pubFiltered = posts.filter(post => {
-                return post.published === false;
-            });
-            response.status(200).json({
-                message: "Ecco la lista dei post non pubblicati",
-                posts: pubFiltered
-            });
-        } else {
-            response.status(400).json({
-                message: "Il valore di published deve essere un booleano"
-            });
-        }
-        return;
-    } */
-    console.log(request.query);
 
 
     const generalQuery = { ...request.query };
@@ -204,7 +188,7 @@ function update(request, response) {
     const positionToUpdate = request.positionToUpdate; //prendo i dati dal middleware di validation
 
     rawPosts.splice(positionToUpdate, 1, updatedPost);
-    
+
 
 
     response.status(200).json({
@@ -257,7 +241,7 @@ async function modify(request, response) { // <--- Aggiunto async
             .replace(/```$/, '')          // Rimuove ``` alla fine
             .trim();                      // Rimuove spazi bianchi o a capo extra
 
-        
+
         const updatedPost = JSON.parse(cleanJsonString);
         const updatedPostPlusId = {
             ...updatedPost,
@@ -266,8 +250,8 @@ async function modify(request, response) { // <--- Aggiunto async
         rawPosts.splice(patchingId, 1, updatedPostPlusId);
 
         console.log(rawPosts);
-        
-        
+
+
 
 
 
