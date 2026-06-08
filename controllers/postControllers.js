@@ -75,12 +75,16 @@ async function index(request, response) {
                                                     p.id, 
                                                     p.title, 
                                                     p.content,
-                                                    GROUP_CONCAT(t.label SEPARATOR ', ') AS tags
+                                                    GROUP_CONCAT(t.label SEPARATOR ',') AS tags
                                                     FROM posts p
                                                     LEFT JOIN post_tag pt ON p.id = pt.post_id
                                                     LEFT JOIN tags t ON pt.tag_id = t.id
                                                     GROUP BY p.id;`);
-        rawPosts = results;
+        rawPosts = results.map(post => {
+            return {...post,
+                tags: post.tags.split(',')
+            }
+        });
         console.log(results);
 
     } catch (error) {
