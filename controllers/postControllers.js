@@ -266,15 +266,22 @@ async function modify(request, response) { // <--- Aggiunto async
     }
 }
 
-function destroy(request, response) {
+async function destroy(request, response) {
     const deletingId = request.deletingId;
 
-    rawPosts.splice(deletingId, 1);
+    console.log(deletingId);
 
-
-    response.status(200).json({
-        message: `post con slug: ${request.params.slug} eliminato`
-    });
+    try {
+        connection.execute(`DELETE FROM posts WHERE posts.id = ${deletingId} `);
+        response.status(204).json({
+            message: `post con slug: ${request.params.slug} eliminato`
+        });
+    } catch (error) {
+        response.status(404).json({
+            message: 'post non trovato'
+        })
+    }
+    // rawPosts.splice(deletingId, 1);
 
 }
 

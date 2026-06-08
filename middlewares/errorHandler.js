@@ -1,6 +1,17 @@
-import rawPosts from "../data/posts.js";
 
-function slugValidation(request, response, next) {
+import connection from "../db.js";
+
+async function slugValidation(request, response, next) {
+  let rawPosts = [];
+  try {
+    const [results] = await connection.execute('SELECT * FROM `posts`');
+    rawPosts = results;
+    console.log(rawPosts);
+    
+  } catch (error) {
+    throw error;
+  }
+  
   const slug = (request.params.slug).trim();
 
   if (slug === '') {
@@ -12,26 +23,39 @@ function slugValidation(request, response, next) {
     return;
   }
 
-  if (!isNaN(Number(slug))) { //se slug è un numero
-    console.log('number as slug error');
+  if (isNaN(Number(slug))) { //se slug non è un numero
+    console.log('string as slug error');
     response.status(400).json({
-      message: "Lo slug non può essere un numero"
+      message: "Lo slug deve essere un numero"
     });
     return;
   }
 
   const searchedPost = rawPosts.find(post => {
-        return post.slug === slug;
+        return post.id === Number(slug);
     });
     
   request.searchedPost = searchedPost;
-  const patchingId = rawPosts.findIndex((post) => {return post.slug === request.params.slug});
+  const patchingId = rawPosts.findIndex((post) => {return post.id === Number(slug)});
   request.patchingId = patchingId; //questo mi serve solo nel caso della patch
+
+  const deletingId = rawPosts.findIndex((post) => {return post.id === Number(slug)});
+  request.deletingId = deletingId; //questo mi serve solo nel caso della delete
+  
 
   next();
 }
 
-function postValidation(request, response, next) {
+async function postValidation(request, response, next) {
+  let rawPosts = [];
+  try {
+    const [results] = await connection.execute('SELECT * FROM `posts`');
+    rawPosts = results;
+    console.log(rawPosts);
+    
+  } catch (error) {
+    throw error;
+  }
   const { id, created_at, published, slug, ...rest } = rawPosts[0]; //mi serve l'oggetto senza slug per la validazione
   const validImgFormats = ["jpg", "jpeg", "png", "webp", "gif", "svg", "tif", "tiff"];
 
@@ -124,9 +148,6 @@ function postValidation(request, response, next) {
     slug: newPostSlug,
     published: true
   }
-
-  const deletingId = rawPosts.findIndex((post) => {return post.slug === request.params.slug});
-  request.deletingId = deletingId; //questo mi serve solo nel caso della delete
 
   request.newPost = newPost; //passo i dati tramite l'oggetto della request alla funzione successiva
   request.positionToUpdate = positionToUpdate;
