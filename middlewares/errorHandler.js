@@ -56,14 +56,29 @@ async function slugValidation(request, response, next) {
 async function postValidation(request, response, next) {
   let rawPosts = [];
   try {
-    const [results] = await connection.execute('SELECT * FROM `posts`');
-    rawPosts = results;
+    const [results] = await connection.execute(`SELECT 
+                                                p.id, 
+                                                p.title, 
+                                                p.content,
+                                                p.image,
+                                                GROUP_CONCAT(t.label SEPARATOR ',') AS tags
+                                                FROM posts p
+                                                LEFT JOIN post_tag pt ON p.id = pt.post_id
+                                                LEFT JOIN tags t ON pt.tag_id = t.id
+                                                GROUP BY p.id;`);
+
+                                                
+    rawPosts = results.map(post => {
+      return {...post,
+        tags: post.tags.split(',')
+      }
+    });
     console.log(rawPosts);
     
   } catch (error) {
     throw error;
   }
-  const { id, created_at, published, slug, ...rest } = rawPosts[0]; //mi serve l'oggetto senza slug per la validazione
+  const { id, ...rest } = rawPosts[0]; //mi serve l'oggetto senza slug per la validazione
   const validImgFormats = ["jpg", "jpeg", "png", "webp", "gif", "svg", "tif", "tiff"];
 
 
@@ -113,47 +128,17 @@ async function postValidation(request, response, next) {
     }
   });
 
-  if (typeof request.body.prep_time !== 'number') {
-    response.status(400).json({
-      message: `Il valore di 'prep_time' deve essere un numero`
-    });
-    return;
-  }
-
   const sortedByIndex = rawPosts.toSorted(function (a, b) { return b.id - a.id });
 
   const newPostId = sortedByIndex[0] + 1;
-  const date = new Date();
-  const newPostDay = date.toLocaleDateString();
-  const newPostTime = date.toLocaleTimeString();
-  const newPostDate = `${newPostDay}T${newPostTime}Z`;
-  const rawSlugArr = request.body.title.split(' ');
-  let newPostSlug;
-
-  newPostSlug = rawSlugArr.filter(current => {
-    return current !== '';
-  }).join('-').toLowerCase();
-
-  let slugCounter = 1;
-  let tempSlug = newPostSlug;                                                                          //positionToUpdate
+                                                                         //positionToUpdate
   const positionToUpdate = rawPosts.findIndex((post) => { return post.slug === request.params.slug }); //serve per sovrascrivere il post precedente
   console.log(positionToUpdate);
 
-  rawPosts.forEach(post => {
-    if (tempSlug === post.slug) {
-      tempSlug = `${newPostSlug}-${slugCounter}`;
-      slugCounter++;
-    }
-  })
-
-  newPostSlug = tempSlug;
 
   const newPost = {
     ...request.body,
     id: newPostId,
-    created_at: newPostDate,
-    slug: newPostSlug,
-    published: true
   }
 
   request.newPost = newPost; //passo i dati tramite l'oggetto della request alla funzione successiva
