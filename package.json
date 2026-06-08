@@ -1,0 +1,22 @@
+{
+  "name": "express-blog-routing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "watch": "node --watch --env-file=.env server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.2",
+  "type": "module",
+  "dependencies": {
+    "@langchain/anthropic": "^1.4.0",
+    "express": "^5.2.1",
+    "langchain": "^1.4.2",
+    "nodemailer": "^8.0.7",
+    "zod": "^4.4.3"
+  }
+}
