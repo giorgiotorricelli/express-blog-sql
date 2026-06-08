@@ -36,13 +36,14 @@ async function slugValidation(request, response, next) {
     });
     
   request.searchedPost = searchedPost;
+  
   const patchingId = rawPosts.findIndex((post) => {return post.id === Number(slug)});
-  request.patchingId = patchingId; //questo mi serve solo nel caso della patch
+  request.patchingId = patchingId + 1; //questo mi serve solo nel caso della patch
+  request.searchedId = patchingId + 1; //questo mi serve solo nel caso della show
+  
+  request.deletingId = patchingId + 1; //questo mi serve solo nel caso della delete
 
-  const deletingId = rawPosts.findIndex((post) => {return post.id === Number(slug)});
-  request.deletingId = deletingId; //questo mi serve solo nel caso della delete
-
-  if (deletingId === -1 || patchingId === -1){
+  if (patchingId === -1){
     response.status(404).json({
       message: 'post non trovato'
     })

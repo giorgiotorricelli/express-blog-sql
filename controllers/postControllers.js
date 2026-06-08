@@ -71,7 +71,15 @@ function multipleTagsSearch(stricts, flexibles, posts, response) {
 async function index(request, response) {
     let rawPosts = [];
     try {
-        const [results] = await connection.execute('SELECT * FROM `posts`');
+        const [results] = await connection.execute(`SELECT 
+                                                    p.id, 
+                                                    p.title, 
+                                                    p.content,
+                                                    GROUP_CONCAT(t.label SEPARATOR ', ') AS tags
+                                                    FROM posts p
+                                                    LEFT JOIN post_tag pt ON p.id = pt.post_id
+                                                    LEFT JOIN tags t ON pt.tag_id = t.id
+                                                    GROUP BY p.id;`);
         rawPosts = results;
         console.log(results);
 
@@ -80,7 +88,7 @@ async function index(request, response) {
     }
 
     const posts = rawPosts.map(post => {
-        const { id, created_at, published, ...rest } = post;
+        const { id, ...rest } = post;
         return rest;
     });
 
@@ -154,14 +162,32 @@ async function index(request, response) {
 }
 
 
-function show(request, response) {
+async function show(request, response) {
     const searchedPost = request.searchedPost;
+
+    const searchedId = request.searchedId;
+
+    const queryShowSql = `SELECT t.label
+                            FROM posts AS p
+                            JOIN post_tag AS pt
+                            ON p.id = pt.post_id
+                            JOIN tags AS t
+                            ON t.id = pt.tag_id
+                            WHERE p.id = ${searchedId};`
+
+    const [results] = await connection.execute(queryShowSql);
+    const tags = results.map(tag => {
+        return tag.label;
+    })
 
 
     if (searchedPost) {
         response.status(200).json({
             message: "Ecco il post che cercavi",
-            post: searchedPost
+            post: {
+                ...searchedPost,
+                tags
+            }
         })
     } else {
         response.status(404).json({
@@ -272,7 +298,7 @@ async function destroy(request, response) {
     console.log(deletingId);
 
     try {
-        connection.execute(`DELETE FROM posts WHERE posts.id = ${deletingId + 1} `);
+        connection.execute(`DELETE FROM posts WHERE posts.id = ${deletingId} `);
         response.status(204).json({
             message: `post con slug: ${request.params.slug} eliminato`
         });
